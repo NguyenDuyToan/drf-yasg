@@ -8,6 +8,7 @@ from decimal import Decimal
 
 from django.core import validators
 from django.db import models
+from django.contrib.postgres.fields import JSONField
 from rest_framework import serializers
 from rest_framework.settings import api_settings as rest_framework_settings
 
@@ -398,6 +399,7 @@ model_field_to_basic_type = [
     (models.TimeField, (openapi.TYPE_STRING, None)),
     (models.UUIDField, (openapi.TYPE_STRING, openapi.FORMAT_UUID)),
     (models.CharField, (openapi.TYPE_STRING, None)),
+    (JSONField, (openapi.TYPE_OBJECT, None))
 ]
 
 ip_format = {'ipv4': openapi.FORMAT_IPV4, 'ipv6': openapi.FORMAT_IPV6}
@@ -419,6 +421,7 @@ serializer_field_to_basic_type = [
     (serializers.DateField, (openapi.TYPE_STRING, openapi.FORMAT_DATE)),
     (serializers.DateTimeField, (openapi.TYPE_STRING, openapi.FORMAT_DATETIME)),
     (serializers.ModelField, (openapi.TYPE_STRING, None)),
+    (serializers.JSONField, (openapi.TYPE_OBJECT, None))
 ]
 
 basic_type_info = serializer_field_to_basic_type + model_field_to_basic_type
@@ -733,6 +736,15 @@ class StringDefaultFieldInspector(FieldInspector):
         # TODO unhandled fields: TimeField JSONField
         SwaggerType, ChildSwaggerType = self._get_partial_types(field, swagger_object_type, use_references, **kwargs)
         return SwaggerType(type=openapi.TYPE_STRING)
+
+
+class ObjectFieldInspector(FieldInspector):
+    """For otherwise unhandled fields, return them as plain :data:`.TYPE_STRING` objects."""
+
+    def field_to_swagger_object(self, field, swagger_object_type, use_references, **kwargs):  # pragma: no cover
+        SwaggerType, ChildSwaggerType = self._get_partial_types(
+            field, swagger_object_type, use_references, **kwargs)
+        return SwaggerType(type=openapi.TYPE_OBJECT)
 
 
 try:
